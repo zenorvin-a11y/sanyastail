@@ -1,18 +1,26 @@
 const express = require('express');
 const app = express();
 
+// ПРОСТАЯ ВЕРСИЯ БЕЗ ЧАТА (для начала)
 app.get('/', (req, res) => {
   res.send(`
     <html>
-      <body style="background:black;color:red;padding:20px;">
-        <h1> САНЯСТАИЛ РАБОТАЕТ!</h1>
-        <p>7 лет в мад сити не прошли даром</p>
-      </body>
+    <body style="background:black;color:red;padding:50px;text-align:center;">
+      <h1>🤬 САНЯСТАИЛ v2.0</h1>
+      <h2>Мессенджер для даунов из мад сити</h2>
+      <p>Создатель: zenorvin-a11y</p>
+      <p>7 лет игры не прошли даром</p>
+      <div style="border:3px solid red;padding:20px;margin:20px;">
+        <h3>💬 Чат скоро будет!</h3>
+        <p>Пока можно только смотреть на этот красивый текст</p>
+      </div>
+      <p>Ссылка: ${req.headers.host}</p>
+    </body>
     </html>
   `);
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('Сервер запущен на порту ' + PORT);
+  console.log('Сайт обновлён! Порт: ' + PORT);
 });
