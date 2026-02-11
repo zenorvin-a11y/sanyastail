@@ -1,0 +1,159 @@
+// =========== ОСНОВНЫЕ НАСТРОЙКИ ===========
+const express = require('express');
+const app = express();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+const multer = require('multer');
+const nodemailer = require('nodemailer');
+
+// Настройка загрузки файлов
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage });
+
+// Настройка почты (твоя почта!)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'zenorvin@gmail.com', // ТВОЯ ПОЧТА
+    pass: 'твой-пароль-приложения' // Пароль приложения Gmail
+  }
+});
+
+// =========== БАЗА ДАННЫХ (ПРОСТАЯ) ===========
+let users = {}; // {socketId: {name, avatar, contacts: []}}
+let chats = {}; // {chatId: {type: 'private'/'group', members: [], messages: []}}
+let reports = []; // Жалобы
+
+// =========== РОУТЫ ===========
+app.use(express.static('public'));
+
+// Главная
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+// Страница чата
+app.get('/chat/:id', (req, res) => {
+  res.sendFile(__dirname + '/public/chat.html');
+});
+
+// Загрузка файла
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (req.file) {
+    res.json({ 
+      success: true, 
+      url: '/uploads/' + req.file.filename,
+      type: req.file.mimetype 
+    });
+  } else {
+    res.json({ success: false });
+  }
+});
+
+// Отправка жалобы на почту
+app.post('/report', express.json(), (req, res) => {
+  const { reporter, reportedUser, reason } = req.body;
+  
+  // Сохраняем жалобу
+  reports.push({ reporter, reportedUser, reason, date: new Date() });
+  
+  // Отправляем на почту
+  const mailOptions = {
+    from: 'zenorvin@gmail.com',
+    to: 'zenorvin@gmail.com', // ТВОЯ ПОЧТА
+    subject: '🚨 ЖАЛОБА В СПЕКТР',
+    text: `Жалоба от: ${reporter}\nНа пользователя: ${reportedUser}\nПричина: ${reason}\nДата: ${new Date()}`
+  };
+  
+  transporter.sendMail(mailOptions, (error) => {
+    if (error) console.log('Ошибка отправки:', error);
+  });
+  
+  res.json({ success: true });
+});
+
+// =========== SOCKET.IO ===========
+io.on('connection', (socket) => {
+  console.log('Подключение:', socket.id);
+  
+  // Регистрация пользователя
+  socket.on('register', (userData) => {
+    users[socket.id] = {
+      ...userData,
+      contacts: [],
+      createdAt: new Date()
+    };
+    
+    // Уведомляем всех о новом пользователе
+    socket.broadcast.emit('user_online', userData.name);
+  });
+  
+  // Создать чат
+  socket.on('create_chat', (data) => {
+    const chatId = Date.now().toString();
+    chats[chatId] = {
+      type: data.type || 'private',
+      name: data.name || 'Новый чат',
+      members: [socket.id, ...data.members],
+      messages: [],
+      admins: [socket.id],
+      createdAt: new Date()
+    };
+    
+    socket.emit('chat_created', { chatId, chat: chats[chatId] });
+  });
+  
+  // Отправить сообщение
+  socket.on('send_message', (data) => {
+    const { chatId, text, fileUrl, fileType } = data;
+    const user = users[socket.id];
+    
+    if (chats[chatId]) {
+      const message = {
+        id: Date.now(),
+        sender: socket.id,
+        senderName: user?.name || 'Аноним',
+        text,
+        fileUrl,
+        fileType,
+        timestamp: new Date()
+      };
+      
+      chats[chatId].messages.push(message);
+      
+      // Отправляем всем участникам чата
+      chats[chatId].members.forEach(memberId => {
+        io.to(memberId).emit('new_message', { chatId, message });
+      });
+    }
+  });
+  
+  // Добавить контакт
+  socket.on('add_contact', (contactId) => {
+    if (users[socket.id]) {
+      users[socket.id].contacts.push(contactId);
+      socket.emit('contact_added', contactId);
+    }
+  });
+  
+  // Отключение
+  socket.on('disconnect', () => {
+    const user = users[socket.id];
+    if (user) {
+      socket.broadcast.emit('user_offline', user.name);
+      delete users[socket.id];
+    }
+  });
+});
+
+// =========== ЗАПУСК ===========
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🌈 СПЕКТР запущен на порту ${PORT}`);
+  console.log(`👉 Открой: http://localhost:${PORT}`);
+});

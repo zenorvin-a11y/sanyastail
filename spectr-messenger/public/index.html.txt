@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌈 СПЕКТР - Главная</title>
+    <style>
+        body { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        input, button { padding: 10px; margin: 10px; }
+        .features { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin: 30px 0; }
+        .feature { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; width: 180px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌈 СПЕКТР МЕССЕНДЖЕР</h1>
+        <p>Современный мессенджер с контактами, группами и файлами</p>
+        
+        <div class="features">
+            <div class="feature">👤 Личные контакты</div>
+            <div class="feature">👥 Группы и каналы</div>
+            <div class="feature">📸 Фото и видео</div>
+            <div class="feature">🚨 Жалобы админу</div>
+        </div>
+        
+        <div>
+            <input type="text" id="username" placeholder="Введи имя" value="Пользователь">
+            <button onclick="register()">Начать общение</button>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        function register() {
+            const username = document.getElementById('username').value;
+            socket.emit('register', {
+                name: username,
+                avatar: 'https://img.icons8.com/color/96/000000/user.png'
+            });
+            window.location.href = '/chat/main';
+        }
+    </script>
+</body>
+</html>

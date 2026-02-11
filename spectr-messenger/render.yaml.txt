@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: spectr-messenger
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: EMAIL
+        value: zenorvin@gmail.com
+      - key: EMAIL_PASSWORD
+        sync: false  # ВСТАВЬ ПАРОЛЬ ВРУЧНУЮ В RENDER!
