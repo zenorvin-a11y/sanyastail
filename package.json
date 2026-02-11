@@ -1,12 +1,16 @@
 {
   "name": "spectr-messenger",
-  "version": "1.0.0",
-  "description": "Современный мессенджер СПЕКТР с красивым дизайном",
+  "version": "3.0.0",
+  "description": "Мессенджер с Google авторизацией",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "passport": "^0.6.0",
+    "passport-google-oauth20": "^2.0.0",
+    "socket.io": "^4.5.4"
   }
 }
